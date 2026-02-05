@@ -1,0 +1,20 @@
+version: "3"
+services:
+  otel-agent:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-agent
+    restart: always
+    network_mode: "host"
+    volumes:
+      - ./config.yaml:/etc/otelcol-contrib/config.yaml
+      - ./otel-data:/var/lib/otelcol
+      - /proc:/hostfs/proc:ro
+      - /sys:/hostfs/sys:ro
+      - /:/rootfs:ro
+    environment:
+      - HOST_PROC=/hostfs/proc
+      - HOST_SYS=/hostfs/sys
+      - HOST_ETC=/rootfs/etc
+      - HOST_VAR=/rootfs/var
+      - HOST_RUN=/rootfs/run
+      - HOST_DEV=/rootfs/dev
