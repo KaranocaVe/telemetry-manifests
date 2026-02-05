@@ -1,0 +1,62 @@
+receivers:
+  hostmetrics:
+    collection_interval: 30s
+    scrapers:
+      cpu:
+      load:
+      memory:
+      disk:
+      network:
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'nvidia-gpu'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['localhost:9400']
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 75
+    spike_limit_percentage: 15
+  resourcedetection:
+    detectors: [env, system]
+  resource:
+    attributes:
+      - key: service.name
+        value: otel-agent
+        action: upsert
+      - key: service.instance.id
+        value: ${HOSTNAME}
+        action: upsert
+  batch:
+
+extensions:
+  file_storage:
+    directory: /var/lib/otelcol
+
+exporters:
+  otlp:
+    endpoint: "1.OTel.IP.111:4317"
+    tls:
+      insecure: true
+    sending_queue:
+      enabled: true
+      num_consumers: 4
+      queue_size: 10000
+      storage: file_storage
+    retry_on_failure:
+      enabled: true
+      initial_interval: 1s
+      max_interval: 30s
+      max_elapsed_time: 10m
+
+service:
+  extensions: [file_storage]
+  pipelines:
+    metrics:
+      receivers: [hostmetrics, prometheus]
+      processors: [memory_limiter, resourcedetection, resource, batch]
+      exporters: [otlp]

@@ -1,0 +1,26 @@
+version: "3"
+services:
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:4.5.1-4.8.0-distroless
+    container_name: dcgm-exporter
+    restart: always
+    ports:
+      - "9400:9400"
+    gpus: all
+
+  otel-agent:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: otel-agent
+    restart: always
+    network_mode: "host"
+    depends_on:
+      - dcgm-exporter
+    volumes:
+      - ./config.yaml:/etc/otelcol-contrib/config.yaml
+      - ./otel-data:/var/lib/otelcol
+      - /proc:/hostfs/proc:ro
+      - /sys:/hostfs/sys:ro
+      - /:/rootfs:ro
+    environment:
+      - HOST_PROC=/hostfs/proc
+      - HOST_SYS=/hostfs/sys
